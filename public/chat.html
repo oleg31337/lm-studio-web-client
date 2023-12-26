@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Local AI Chat</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #chat-container {
+            min-width: 600px;
+            width: 800px;
+            height: 80vh;
+            background-color: #202124;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px 0 rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #input-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        }
+        #input-container input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        #input-container button {
+            padding: 10px 15px;
+            margin-left: 5px; /* Add some space between the buttons */
+            background-color: #0b5ed7;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #input-container button:hover {
+            background-color: #0a4ec1;
+        }
+        #chatbox {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        .user-message {
+            text-align: right;
+        }
+        .bot-message {
+            text-align: left;
+        }
+        .message div {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 70%;
+        }
+        .user-message div {
+            background-color: #0b5ed7;
+            color: #fff;
+        }
+        .bot-message div {
+            background-color: #313131;
+            color: #fff;
+        }
+        #user_input {
+            padding: 10px 15px;
+            border: none;
+            border-top: 1px solid #3c4043;
+            width: calc(100% - 30px);
+            background-color: #202124;
+            color: #fff;
+            font-size: 16px;
+        }
+        #user_input::placeholder {
+            color: #5f6368;
+        }
+        #user_input:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chatbox"></div>
+        <div id="input-container">
+            <input type="text" id="user_input" placeholder="Type your message here..." autocomplete="off">
+            <button id="stop_button">Stop responding</button>
+            <button id="clear_history_button">Clear history</button>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            var socket = io.connect('http://' + document.domain + ':' + location.port);
+            var lastBotMessage;
+            var converter = new showdown.Converter();
+            var messageBuffer = '';
+            $('#user_input').keypress(function(e) {
+                if (e.which == 13) {
+                    var message = $(this).val();
+                    $(this).val('');
+                    $('#chatbox').append('<div class="message user-message"><div>' + message + '</div></div>');
+                    socket.emit('message', {message: message});
+                    lastBotMessage = null; // Reset lastBotMessage for a new conversation turn
+                    messageBuffer = '';
+                }
+            });
+    
+            socket.on('response', function(data) {
+                // Append new data to the message buffer
+                console.log('Received response:',data)
+                if (data.message != null) messageBuffer += data.message;
+                //console.log(data.message)
+                if (lastBotMessage) {
+                    // Append to the last bot message
+                    //$(lastBotMessage).append(message);
+                    $(lastBotMessage).html(converter.makeHtml(messageBuffer));
+                } else {
+                    // Create a new bot message container
+                    $('#chatbox').append('<div class="message bot-message"><div>' + converter.makeHtml(data.message) + '</div></div>');
+                    // Store the last bot message container
+                    lastBotMessage = $('#chatbox .bot-message div').last();
+                }
+                $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+                if (data.message == null) messageBuffer ='' //Empty buffer on the end of the message
+            });
+            
+            $('#stop_button').click(function() {
+                socket.emit('stop_generation');
+            });
+            $('#clear_history_button').click(function() {
+                // Clear the chatbox contents
+                $('#chatbox').empty();
+                // Reset the lastBotMessage reference
+                lastBotMessage = null;
+                socket.emit('clear_history');
+            });
+        });
+    </script>
+</body>
+</html>
