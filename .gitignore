@@ -108,3 +108,4 @@ app-options.json
 /app-options.json
 *test*.js
 *test*.mjs
+sessions/*
