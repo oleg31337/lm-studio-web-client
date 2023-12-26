@@ -1,5 +1,6 @@
 // Import required modules using ES6 import syntax
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import { createServer } from 'http';
@@ -15,9 +16,19 @@ const app = express();
 const server = createServer(app);
 const io = new SocketIOServer(server);
 
+//express session file store init
 const FileStore = (await import('session-file-store')).default(session);
 const fileStoreOptions = {path: path.join(__dirname, 'sessions')};
 const fileStore = new FileStore(fileStoreOptions);
+
+// read options from file
+const optionsFilePath = process.env.OPTIONS_FILE || path.join(process.env.DATA_PATH || '', 'options.json');
+const options = JSON.parse(fs.readFileSync(optionsFilePath));
+const historyLength=process.env.HISTORYLEN || options.historyLength || 100;
+const baseURL=process.env.BASEURL || options.baseURL || "http://localhost:1234/v1";
+const apiKey=process.env.APIKEY || options.apiKey || "not-needed";
+const systemContentText=process.env.SYSTEMCONTENT || options.systemContent || "You are an intelligent assistant. You always provide well-reasoned answers that are both correct and helpful.";
+const httpPort=process.env.PORT || options.httpPort || 5000
 
 // Configure session middleware for Express
 const sessionMiddleware = session({
@@ -36,14 +47,14 @@ app.use(sessionMiddleware);
 
 // Initialize the OpenAI client
 const openai = new OpenAI({
-    apiKey: "not-needed",
-    baseURL: "http://192.168.1.66:8000/v1"
+    apiKey: apiKey,
+    baseURL: baseURL
 });
 
 // System content
 const systemContent = {
     role: "system",
-    content: "You are an intelligent assistant. You always provide well-reasoned answers that are both correct and helpful. You always use Markdown formatting when replying with code."
+    content: systemContentText
 };
 
 // Middleware for serving static files (e.g., HTML, CSS, JS)
@@ -105,8 +116,8 @@ io.on('connection', (socket) => {
                 }
                 if (message == null){
                     if (reply_message.content.length >1) history.push(reply_message);
-                    if (history.length > 100) {
-                        history = history.slice(-100);
+                    if (history.length > historyLength) {
+                        history = history.slice(-1*historyLength);
                     }
                     socket.handshake.session.history = history;
                     socket.handshake.session.save();
@@ -141,7 +152,6 @@ io.on('connection', (socket) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+server.listen(httpPort, () => {
+    console.log(`Server running on port ${httpPort}`);
 });

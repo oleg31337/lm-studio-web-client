@@ -1,0 +1,7 @@
+{
+    "baseURL":"http://192.168.1.66:8000/v1",
+    "apiKey": "not-needed",
+    "systemContent": "You are an intelligent assistant. You always provide well-reasoned answers that are both correct and helpful. You always use Markdown formatting when replying with code.",
+    "historyLength":100,
+    "httpPort":5000
+}
