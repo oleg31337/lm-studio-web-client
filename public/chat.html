@@ -173,6 +173,7 @@
                 //console.log(e);
                 if (e.which == 13 && e.shiftKey == false) {
                     var message = $(this).val();
+                    if ((message.replace(/\s/g, '')) == '') return; //ignore empty messages
                     $(this).val('');
                     $('#chatbox').append('<div class="message user-message"><div>' + marked.parse(message) + '</div></div>');
                     $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
