@@ -18,7 +18,10 @@ const io = new SocketIOServer(server);
 
 //express session file store init
 const FileStore = (await import('session-file-store')).default(session);
-const fileStoreOptions = {path: path.join(__dirname, 'sessions')};
+const fileStoreOptions = {
+    path: path.join(__dirname, 'sessions'),
+    ttl: 3600*24*30 // 30 days
+};
 const fileStore = new FileStore(fileStoreOptions);
 
 // read options from file
@@ -27,10 +30,11 @@ const options = JSON.parse(fs.readFileSync(optionsFilePath));
 const historyLength=process.env.HISTORYLEN || options.historyLength || 100;
 const baseURL=process.env.BASEURL || options.baseURL || "http://localhost:1234/v1";
 const apiKey=process.env.APIKEY || options.apiKey || "not-needed";
+const aiModel=process.env.AIMODEL || options.aiModel || "local-model";
 const temperature=process.env.TEMPERATURE || options.temperature || 0.5;
-const maxtokens=process.env.MAXTOKENS || options.maxTokens || 0.5;
+const maxtokens=process.env.MAXTOKENS || options.maxTokens || 2000;
 const systemContentText=process.env.SYSTEMCONTENT || options.systemContent || "You are an intelligent assistant. You always provide well-reasoned answers that are both correct and helpful.";
-const httpPort=process.env.PORT || options.httpPort || 5000
+const httpPort=process.env.PORT || options.httpPort || 5000;
 
 // Configure session middleware for Express
 const sessionMiddleware = session({
@@ -38,7 +42,8 @@ const sessionMiddleware = session({
     secret: 'my-very-secure-crypto-shrypto-key',
     resave: true,
     saveUninitialized: true,
-    cookie: { secure: false } // Set to true if using https
+    cookie: { secure: false }, // Set to true if using https
+    maxAge: 3600 * 24 * 30 * 1000 // 30 days
 });
 
 app.set('trust proxy', 1);
@@ -103,11 +108,11 @@ io.on('connection', (socket) => {
             //console.log(history);
             // Generate response using OpenAI
             const response = await openai.chat.completions.create({
-                model: "local-model",
+                model: aiModel,
                 messages: history,
                 stream: true,
                 temperature: temperature,
-                max_tokens: 2048
+                max_tokens: maxtokens
             });
             var reply_message = {"role": "assistant", "content": ""};
             socket.emit('started_generation');

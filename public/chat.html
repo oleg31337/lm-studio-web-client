@@ -8,7 +8,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
     <script>hljs.highlightAll();</script>
@@ -87,14 +87,20 @@
         }
         .message div {
             display: inline-block;
-            padding: 10px 15px;
+            padding: 1px 10px;
             border-radius: 18px;
-            max-width: 70%;
+            max-width: 90%;
+        }
+        .message pre {
+            padding: 10px 10px;
+            margin: 5px;
+            background-color: #161616;
         }
 
         .user-message div {
             background-color: #4b4b4b;
             color: #fff;
+            text-align: left;
         }
 
         .bot-message div {
