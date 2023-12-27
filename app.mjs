@@ -135,8 +135,8 @@ io.on('connection', (socket) => {
                     socket.handshake.session.history = history;
                     socket.handshake.session.save();
                 }
-                socket.emit('still_generation');
             }
+            socket.emit('stopped_generation');
         } catch (e) {
             console.error(e);
             socket.emit('response', { message: 'An error occurred' });
