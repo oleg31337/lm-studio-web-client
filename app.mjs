@@ -27,6 +27,8 @@ const options = JSON.parse(fs.readFileSync(optionsFilePath));
 const historyLength=process.env.HISTORYLEN || options.historyLength || 100;
 const baseURL=process.env.BASEURL || options.baseURL || "http://localhost:1234/v1";
 const apiKey=process.env.APIKEY || options.apiKey || "not-needed";
+const temperature=process.env.TEMPERATURE || options.temperature || 0.5;
+const maxtokens=process.env.MAXTOKENS || options.maxTokens || 0.5;
 const systemContentText=process.env.SYSTEMCONTENT || options.systemContent || "You are an intelligent assistant. You always provide well-reasoned answers that are both correct and helpful.";
 const httpPort=process.env.PORT || options.httpPort || 5000
 
@@ -75,6 +77,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/chat.html'));
 });
 
+app.get('/get-session-data', (req, res) => {
+    const history = req.session.history;
+    res.send(history);
+});
+
 // Share session middleware with socket.io
 io.use(sharedsession(sessionMiddleware, {
     autoSave: true
@@ -87,18 +94,19 @@ io.on('connection', (socket) => {
     // Handle incoming chat messages
     socket.on('message', async (data) => {
         try {
+            if (data.message==null || data.message=='' || data.message=='\n') return socket.emit('response', { message: 'Empty message' });
             let history = socket.handshake.session.history || [systemContent];
             history.push({ role: "user", content: data.message });
             socket.handshake.session.history = history;
             socket.handshake.session.abort_flag=0
             socket.handshake.session.save();
-            console.log(history);
+            //console.log(history);
             // Generate response using OpenAI
             const response = await openai.chat.completions.create({
                 model: "local-model",
                 messages: history,
                 stream: true,
-                temperature: 0.5,
+                temperature: temperature,
                 max_tokens: 2048
             });
             var reply_message = {"role": "assistant", "content": ""};

@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Local AI Chat</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.min.js"></script>
+
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -13,15 +16,18 @@
             color: #fff;
             margin: 0;
             padding: 20px;
-            display: flex;
-            justify-content: center;
+            height: 90vh; /* Set the body height to 100% of the viewport height */
+            display: flex; /* Use flexbox for layout */
+            flex-direction: column; /* Arrange children in a column */
+            justify-content: top;
             align-items: center;
-            height: 100vh;
         }
+
         #chat-container {
-            min-width: 600px;
-            width: 800px;
-            height: 80vh;
+            width: 100%;
+            max-width: 100vh;
+            height: 90vh; /* Set the height to 50% of the viewport height */
+            max-height: 100vh; /* Set a maximum height of 50% of the viewport height */
             background-color: #202124;
             border-radius: 8px;
             box-shadow: 0 2px 10px 0 rgba(0,0,0,0.5);
@@ -29,37 +35,45 @@
             flex-direction: column;
             overflow: hidden;
         }
+
         #input-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px;
+            display: flex;
+            height: 7vh;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
         }
+
         #input-container input {
             flex-grow: 1;
+            height: 100%;
             margin-right: 10px;
         }
+
         #input-container button {
             padding: 10px 15px;
-            margin-left: 5px; /* Add some space between the buttons */
-            background-color: #0b5ed7;
+            background-color: #555555;
             color: #fff;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
+            margin-left: 5px;
+            margin-top: 5px;
+            margin-bottom: 5px;
         }
+
         #input-container button:hover {
-            background-color: #0a4ec1;
+            background-color: #9c9c9c;
         }
+
         #chatbox {
             flex-grow: 1;
             padding: 20px;
             overflow-y: auto;
         }
         .message {
-            margin-bottom: 12px;
-            line-height: 1.4;
+            margin-bottom: 10px;
         }
         .user-message {
             text-align: right;
@@ -73,14 +87,17 @@
             border-radius: 18px;
             max-width: 70%;
         }
+
         .user-message div {
-            background-color: #0b5ed7;
+            background-color: #4b4b4b;
             color: #fff;
         }
+
         .bot-message div {
             background-color: #313131;
             color: #fff;
         }
+
         #user_input {
             padding: 10px 15px;
             border: none;
@@ -88,13 +105,36 @@
             width: calc(100% - 30px);
             background-color: #202124;
             color: #fff;
+            font-family: 'Arial', sans-serif;
             font-size: 16px;
+            overflow-y: auto;
+            height: 100%;
+            resize: none;
         }
+
         #user_input::placeholder {
             color: #5f6368;
         }
+
         #user_input:focus {
             outline: none;
+        }
+
+        @media (max-width: 600px) {
+            #input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            #input-container input {
+                margin-right: 0;
+                margin-bottom: 10px;
+                width: calc(100% - 20px);
+            }
+
+            #input-container button {
+                margin-top: 0;
+            }
         }
     </style>
 </head>
@@ -102,7 +142,8 @@
     <div id="chat-container">
         <div id="chatbox"></div>
         <div id="input-container">
-            <input type="text" id="user_input" placeholder="Type your message here..." autocomplete="off">
+            <textarea id="user_input" placeholder="Type your message here..." autocomplete="off"></textarea>
+            <button id="send_button">Send request</button>
             <button id="stop_button">Stop responding</button>
             <button id="clear_history_button">Clear history</button>
         </div>
@@ -111,13 +152,15 @@
         $(document).ready(function() {
             var socket = io.connect('http://' + document.domain + ':' + location.port);
             var lastBotMessage;
-            var converter = new showdown.Converter();
+            //var converter = new showdown.Converter();
             var messageBuffer = '';
             $('#user_input').keypress(function(e) {
-                if (e.which == 13) {
+                //console.log(e);
+                if (e.which == 13 && e.shiftKey == false) {
                     var message = $(this).val();
                     $(this).val('');
-                    $('#chatbox').append('<div class="message user-message"><div>' + message + '</div></div>');
+                    $('#chatbox').append('<div class="message user-message"><div>' + marked.parse(message) + '</div></div>');
+                    $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
                     socket.emit('message', {message: message});
                     lastBotMessage = null; // Reset lastBotMessage for a new conversation turn
                     messageBuffer = '';
@@ -126,16 +169,18 @@
     
             socket.on('response', function(data) {
                 // Append new data to the message buffer
-                console.log('Received response:',data)
+                //console.log('Received response:',data) //debug print
                 if (data.message != null) messageBuffer += data.message;
                 //console.log(data.message)
                 if (lastBotMessage) {
                     // Append to the last bot message
                     //$(lastBotMessage).append(message);
-                    $(lastBotMessage).html(converter.makeHtml(messageBuffer));
+                    //$(lastBotMessage).html(converter.makeHtml(messageBuffer));
+                    $(lastBotMessage).html(marked.parse(messageBuffer));
                 } else {
                     // Create a new bot message container
-                    $('#chatbox').append('<div class="message bot-message"><div>' + converter.makeHtml(data.message) + '</div></div>');
+                    //$('#chatbox').append('<div class="message bot-message"><div>' + converter.makeHtml(data.message) + '</div></div>');
+                    $('#chatbox').append('<div class="message bot-message"><div>' + marked.parse(data.message) + '</div></div>');
                     // Store the last bot message container
                     lastBotMessage = $('#chatbox .bot-message div').last();
                 }
@@ -143,6 +188,13 @@
                 if (data.message == null) messageBuffer ='' //Empty buffer on the end of the message
             });
             
+            $('#send_button').click(function() {
+                const enterKeyEvent = jQuery.Event("keypress");
+                enterKeyEvent.which=13;
+                enterKeyEvent.ctrlKey= false;
+                enterKeyEvent.shiftKey= false
+                $('#user_input').trigger(enterKeyEvent);
+            });
             $('#stop_button').click(function() {
                 socket.emit('stop_generation');
             });
@@ -153,6 +205,24 @@
                 lastBotMessage = null;
                 socket.emit('clear_history');
             });
+            fetch('/get-session-data')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Session data:', data);
+                    for (i=0;i<data.length;i++){
+                        if (data[i].role=="user") {
+                            $('#chatbox').append('<div class="message user-message"><div>' + marked.parse(data[i].content) + '</div></div>');
+                        }
+                        else if (data[i].role=="assistant") {
+                            $('#chatbox').append('<div class="message bot-message"><div>' + marked.parse(data[i].content) + '</div></div>');
+                        }
+                    }
+                    $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+                })
+                .catch(error => {
+                    console.error('Error fetching session data:', error);
+                });
+
         });
     </script>
 </body>
