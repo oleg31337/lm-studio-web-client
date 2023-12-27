@@ -8,6 +8,10 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <script>hljs.highlightAll();</script>
 
     <style>
         body {
@@ -150,6 +154,11 @@
     </div>
     <script>
         $(document).ready(function() {
+            marked.setOptions({
+                highlight: function(code) {
+                    return hljs.highlightAuto(code).value;
+                }
+            });
             var socket = io.connect('http://' + document.domain + ':' + location.port);
             var lastBotMessage;
             //var converter = new showdown.Converter();
