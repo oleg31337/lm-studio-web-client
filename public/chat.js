@@ -27,6 +27,7 @@ $(document).ready(function() {
     socket.on('response', function(data) {
         // Append new data to the message buffer
         //console.log('Received response:',data) //debug print
+        $('#bot-message-placeholder').remove();
         const backtick=/```/;
         if (data.message != null) messageBuffer += data.message;
         if (backtick.test(data.message)) {codeProgressFlag=!codeProgressFlag; console.log('detected');}
@@ -66,6 +67,8 @@ $(document).ready(function() {
         $('#user_input').prop('disabled', true);
         $('#stop_button').prop('disabled', false);
         $('#send_button').prop('disabled', true);
+        $('#chatbox').append('<div id="bot-message-placeholder" class="message bot-message"><div>'+marked.parse('Thinking...')+'</div></div>');
+        $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
     });
     $('#send_button').click(function() {
         const enterKeyEvent = jQuery.Event("keypress");
