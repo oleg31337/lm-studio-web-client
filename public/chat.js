@@ -28,9 +28,10 @@ $(document).ready(function() {
         // Append new data to the message buffer
         //console.log('Received response:',data) //debug print
         $('#bot-message-placeholder').remove();
-        const backtick=/```/;
+        const backtick=/``/;
         if (data.message != null) messageBuffer += data.message;
-        if (backtick.test(data.message)) {codeProgressFlag=!codeProgressFlag; console.log('detected');}
+        //console.log(data.message);
+        if (backtick.test(data.message)) codeProgressFlag=!codeProgressFlag;
         if (lastBotMessage) {
             if (codeProgressFlag) $(lastBotMessage).html(marked.parse(messageBuffer+'\n```'));
             else $(lastBotMessage).html(marked.parse(messageBuffer));
