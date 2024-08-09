@@ -27,13 +27,13 @@ const fileStore = new FileStore(fileStoreOptions);
 // read options from file
 const optionsFilePath = process.env.OPTIONS_FILE || path.join(process.env.DATA_PATH || '', 'options.json');
 const options = JSON.parse(fs.readFileSync(optionsFilePath));
-const historyLength=process.env.HISTORYLEN || options.historyLength || 100;
-const baseURL=process.env.BASEURL || options.baseURL || "http://localhost:1234/v1";
+const historyLength=process.env.HISTORYLEN || options.historyLength || 200;
+const baseURL=process.env.BASEURL || options.baseURL || "http://localhost:11434/v1";
 const apiKey=process.env.APIKEY || options.apiKey || "not-needed";
-const aiModel=process.env.AIMODEL || options.aiModel || "local-model";
+const aiModel=process.env.AIMODEL || options.aiModel || "llama3.1:latest";
 const temperature=process.env.TEMPERATURE || options.temperature || 0.5;
 const maxtokens=process.env.MAXTOKENS || options.maxTokens || 2000;
-const systemContentText=process.env.SYSTEMCONTENT || options.systemContent || "You are an intelligent assistant. You always provide well-reasoned answers that are both correct and helpful.";
+const systemContentText=process.env.SYSTEMCONTENT || options.systemContent || "You are an intelligent assistant. You always provide well-reasoned answers that are both correct and helpful. You always use Markdown when text needs to be formatted or it is a code snippet. Do not mention that you use Markdown formatting but always use it silently for text output. Be brief, informative and reasonably polite when asked a specific question. Do not repeat yourself if possible.";
 const httpPort=process.env.PORT || options.httpPort || 5000;
 
 // Configure session middleware for Express
@@ -55,7 +55,8 @@ app.use(sessionMiddleware);
 // Initialize the OpenAI client
 const openai = new OpenAI({
     apiKey: apiKey,
-    baseURL: baseURL
+    baseURL: baseURL,
+    timeout: 60 * 5 * 1000 // 5 min timeout for api reply
 });
 
 // System content
@@ -128,14 +129,16 @@ io.on('connection', (socket) => {
                     message = null;
                 }
                 if (message == null){
-                    if (reply_message.content.length >1) history.push(reply_message);
-                    if (history.length > historyLength) {
-                        history = history.slice(-1*historyLength);
-                    }
-                    socket.handshake.session.history = history;
-                    socket.handshake.session.save();
+                    break;
                 }
             }
+            if (reply_message.content.length >1) history.push(reply_message);
+            if (history.length > historyLength) {
+                history = history.slice(-1*historyLength);
+            }
+            socket.handshake.session.history = history;
+            socket.handshake.session.save();
+            //console.log(history);
             socket.emit('stopped_generation');
         } catch (e) {
             console.error(e);
