@@ -1,0 +1,16 @@
+[Unit]
+Description=Local AI chat
+Documentation=https://github.com/oleg31337/lm-studio-web-client
+After=network.target
+
+[Service]
+Type=simple
+User=chat
+Group=users
+WorkingDirectory=/opt/lm-studio-web-client/
+ExecStartPre=+/opt/lm-studio-web-client/set_permissions.sh
+ExecStart=/usr/bin/node /opt/lm-studio-web-client/app.mjs
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
