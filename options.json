@@ -1,7 +1,8 @@
 {
-    "baseURL":"http://192.168.1.66:8000/v1",
+    "baseURL":"http://192.168.1.222:11434/v1",
     "apiKey": "not-needed",
-    "systemContent": "You are an intelligent assistant. You always provide well-reasoned answers that are both correct and helpful. You always use Markdown formatting when replying with code.",
-    "historyLength":100,
+    "aiModel":"llama3.1:latest",
+    "systemContent": "You are an intelligent assistant. You always provide well-reasoned answers that are both correct and helpful. You always use Markdown when text needs to be formatted or it is a code snippet. Do not mention that you use Markdown formatting but always use it silently for text output. Be brief, informative and reasonably polite when asked a specific question. Do not repeat yourself if possible.",
+    "historyLength":200,
     "httpPort":5000
 }
