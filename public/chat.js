@@ -21,6 +21,7 @@ $(document).ready(function() {
             $('#chatbox').append('<div class="message user-message"><div>' + marked.parse(message) + '</div></div>');
             $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
             socket.emit('message', {message: message});
+            $('#stop_button').focus();
         }
     });
 
@@ -55,11 +56,13 @@ $(document).ready(function() {
         $('#user_input').prop('disabled', false);
         $('#stop_button').prop('disabled', true);
         $('#send_button').prop('disabled', false);
+        $('#user_input').focus();
     });
     socket.on('history_cleared',function(data) {
         $('#user_input').prop('disabled', false);
         $('#stop_button').prop('disabled', true);
         $('#send_button').prop('disabled', false);
+        $('#user_input').focus();
     });
     socket.on('started_generation',function(data) {
         //console.warn('started generation');
@@ -70,6 +73,7 @@ $(document).ready(function() {
         $('#send_button').prop('disabled', true);
         $('#chatbox').append('<div id="bot-message-placeholder" class="message bot-message"><div>'+marked.parse('Thinking...')+'</div></div>');
         $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+        $('#stop_button').focus();
     });
     $('#send_button').click(function() {
         const enterKeyEvent = jQuery.Event("keypress");
@@ -106,5 +110,5 @@ $(document).ready(function() {
         .catch(error => {
             console.error('Error fetching session data:', error);
         });
-
+    $('#user_input').focus();
 });
